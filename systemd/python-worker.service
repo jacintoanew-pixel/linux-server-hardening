@@ -1,0 +1,32 @@
+[Unit]
+Description=Python Background Worker (24/7 Hardened systemd unit)
+After=network.target
+
+[Service]
+Type=simple
+User=pyworker
+Group=pyworker
+WorkingDirectory=/opt/python-worker
+EnvironmentFile=/opt/python-worker/.env
+ExecStart=/opt/python-worker/venv/bin/python /opt/python-worker/worker.py
+Restart=always
+RestartSec=5
+
+# Systemd sandboxing
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/python-worker/data
+
+# Control de recursos contra ataques de denegacion de servicio (DoS)
+MemoryMax=350M
+CPUQuota=85%
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

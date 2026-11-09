@@ -1,0 +1,39 @@
+--- a/etc/nginx/sites-available/default
++++ b/etc/nginx/sites-available/default
+@@ -6,6 +6,8 @@
+ client_max_body_size 100M;
+ limit_req_zone $binary_remote_addr zone=panel_req:10m rate=20r/s;
+ limit_req_zone $binary_remote_addr zone=auth_req:10m rate=5r/s;
++# Fix P0 H-1: freno exclusivo del endpoint de despliegue
++limit_req_zone $binary_remote_addr zone=deploy_req:10m rate=5r/s;
+ 
+ # -------------------------------------------------------------------------
+ # BLOQUES DEFAULT CATCH-ALL (Anti-Host Spoofing / Anti-Leak SEC-18)
+@@ -87,6 +89,15 @@
+         try_files $uri $uri/ =404;
+     }
+ 
++    # Fix P0 H-1: tras el rewrite del alias, esta es la location final del deploy
++    location ~ ^/api/v1/deploy\.php$ {
++        limit_req zone=deploy_req burst=15 nodelay;
++        limit_req_status 429;
++        include snippets/fastcgi-php.conf;
++        fastcgi_pass unix:/run/php/php8.5-fpm.sock;
++        fastcgi_param PHP_ADMIN_VALUE "open_basedir=/var/www/:/etc/webapp/:/tmp/:/proc/";
++    }
++
+     location ~ \.php$ {
+         include snippets/fastcgi-php.conf;
+         fastcgi_pass unix:/run/php/php8.5-fpm.sock;
+
+--- a/etc/php/8.5/fpm/pool.d/www.conf
++++ b/etc/php/8.5/fpm/pool.d/www.conf
+@@ -487,3 +487,8 @@
+ ;php_admin_value[error_log] = /var/log/fpm-php.www.log
+ ;php_admin_flag[log_errors] = on
+ ;php_admin_value[memory_limit] = 32M
++
++; --- Fix P0 H-2: techo de recursos del pool del panel ---
++; Evita que un deploy agote la RAM de un host de 2 GB compartido con otros servicios
++php_admin_value[memory_limit] = 256M
++php_admin_value[max_execution_time] = 60

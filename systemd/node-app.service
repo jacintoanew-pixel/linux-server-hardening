@@ -1,0 +1,31 @@
+[Unit]
+Description=Node.js Web Application (Hardened systemd unit)
+After=network.target
+
+[Service]
+Type=simple
+User=nodeapp
+Group=nodeapp
+WorkingDirectory=/var/www/app
+EnvironmentFile=/var/www/app/.env.production
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node /var/www/app/server.js
+Restart=always
+RestartSec=3
+
+# Systemd Sandbox Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/www/app/data /var/www/app/logs
+MemoryMax=350M
+CPUQuota=85%
+
+[Install]
+WantedBy=multi-user.target

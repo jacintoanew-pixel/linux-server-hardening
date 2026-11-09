@@ -1,0 +1,45 @@
+# ==============================================================================
+# Auditd Rules ??? CIS Linux Benchmark & IBM Security Zero Trust Baseline
+# ==============================================================================
+
+# First rule - delete all existing rules
+-D
+
+# Increase the buffers to survive stress events
+-b 8192
+
+# Failure mode: 1 = printk, 2 = panic
+-f 1
+
+# 1. Identity & Credential Monitoring
+-w /etc/group -p wa -k identity
+-w /etc/passwd -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/security/opasswd -p wa -k identity
+
+# 2. Sudoers & Privilege Delegation
+-w /etc/sudoers -p wa -k scope
+-w /etc/sudoers.d/ -p wa -k scope
+
+# 3. Application Credential Store & 2FA State (Sanitized Reference Paths)
+-w /etc/webapp/credentials.json -p wa -k app_credentials
+-w /etc/webapp/totp_state.json -p wa -k app_credentials
+
+# 4. SSH Daemon Configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd_config
+
+# 5. Network Configuration Changes
+-w /etc/hosts -p wa -k system-locale
+-w /etc/netplan/ -p wa -k system-locale
+
+# 6. Privilege Escalation Binaries
+-w /usr/bin/sudo -p x -k priv_escalation
+-w /usr/bin/su -p x -k priv_escalation
+
+# 7. Kernel Module Operations
+-w /sbin/insmod -p x -k modules
+-w /sbin/rmmod -p x -k modules
+-w /sbin/modprobe -p x -k modules
+
